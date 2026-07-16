@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#E60012">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LuckyReel">
+<title>LuckyReel · 摇号选号</title>
+<style>
+  /* ── 任天堂 / Famicom 调色板 ── */
+  :root{
+    --red:#E60012; --blue:#0078F0; --yellow:#FBD000;
+    --cream:#F0F0E8; --ink:#1A1A1A; --green:#00A651;
+    --line:3px solid var(--ink);
+    --shadow:5px 5px 0 var(--ink);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; height:100%;}
+  body{
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    background:var(--cream); color:var(--ink);
+    display:flex; justify-content:center;
+    overscroll-behavior:none;
+  }
+  .app{
+    width:100%; max-width:480px; min-height:100vh; min-height:100dvh;
+    display:flex; flex-direction:column;
+    background:var(--cream);
+    padding:env(safe-area-inset-top) 16px calc(16px + env(safe-area-inset-bottom));
+  }
+  header{
+    text-align:center; padding:18px 0 10px;
+  }
+  header h1{
+    margin:0; font-size:30px; letter-spacing:1px;
+    color:var(--red); text-shadow:3px 3px 0 var(--ink);
+  }
+  header p{margin:6px 0 0; font-size:13px; color:#555;}
+
+  .view{display:none; flex:1; flex-direction:column; gap:16px; padding-top:6px;}
+  .view.active{display:flex;}
+
+  /* ── 通用按钮 / 控件 ── */
+  .btn{
+    font:inherit; font-weight:800; cursor:pointer;
+    border:var(--line); border-radius:14px; background:#fff; color:var(--ink);
+    padding:14px 16px; box-shadow:var(--shadow);
+    transition:transform .05s, box-shadow .05s; user-select:none;
+  }
+  .btn:active{transform:translate(3px,3px); box-shadow:2px 2px 0 var(--ink);}
+  .btn.primary{background:var(--red); color:#fff;}
+  .btn.yellow{background:var(--yellow);}
+  .btn.blue{background:var(--blue); color:#fff;}
+  .btn.block{width:100%; font-size:18px; padding:18px;}
+  .btn:disabled{opacity:.45; box-shadow:var(--shadow); transform:none; cursor:not-allowed;}
+
+  .card{
+    background:#fff; border:var(--line); border-radius:16px;
+    box-shadow:var(--shadow); padding:16px;
+  }
+  .section-title{font-weight:800; font-size:14px; margin:0 0 10px; color:#444;}
+
+  /* ── 彩种选择 ── */
+  .lottery-row{display:flex; gap:10px;}
+  .lottery-row .btn{flex:1; padding:18px 8px; font-size:17px;}
+  .lottery-row .btn.on{background:var(--blue); color:#fff;}
+
+  /* ── 玩法 ── */
+  .chip-row{display:flex; gap:10px; flex-wrap:wrap;}
+  .chip{
+    font:inherit; font-weight:800; cursor:pointer; border:var(--line);
+    border-radius:999px; background:#fff; padding:9px 16px; box-shadow:3px 3px 0 var(--ink);
+  }
+  .chip:active{transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink);}
+  .chip.on{background:var(--yellow);}
+  .pick-row{display:flex; gap:8px; flex-wrap:wrap;}
+
+  /* ── 步进器 ── */
+  .stepper{display:flex; align-items:center; justify-content:space-between; gap:12px; margin:10px 0;}
+  .stepper .label{font-weight:700;}
+  .stepper .ctrl{display:flex; align-items:center; gap:12px;}
+  .stepper .val{min-width:34px; text-align:center; font-weight:800; font-size:20px;}
+  .round{
+    width:40px; height:40px; border-radius:50%; border:var(--line);
+    background:#fff; font-size:22px; font-weight:800; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; box-shadow:2px 2px 0 var(--ink);
+  }
+  .round:active{transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink);}
+  .round:disabled{opacity:.4;}
+
+  .hint{font-size:12px; color:#888; margin-top:4px;}
+
+  /* ── 摇奖机 ── */
+  .topbar{display:flex; align-items:center; justify-content:space-between;}
+  .back{font:inherit; font-weight:800; cursor:pointer; border:var(--line); border-radius:10px;
+        background:#fff; padding:8px 12px; box-shadow:2px 2px 0 var(--ink);}
+  .back:active{transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink);}
+  .head-name{font-weight:800; font-size:16px; text-align:center; flex:1;}
+
+  .progress{text-align:center; font-weight:800; font-size:15px; color:#444;}
+
+  .machine{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;}
+  .reel{
+    width:160px; height:160px; border-radius:24px; border:var(--line);
+    background:#fff; box-shadow:var(--shadow);
+    display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;
+  }
+  .reel::before{content:""; position:absolute; inset:8px; border-radius:16px;
+    background:repeating-linear-gradient(0deg,#0000 0 14px,rgba(0,0,0,.06) 14px 28px);}
+  #reelNum{
+    position:relative; font-size:74px; font-weight:900; color:var(--ink);
+    font-variant-numeric:tabular-nums; letter-spacing:2px;
+  }
+  .reel.spinning #reelNum{animation:blur .12s linear infinite; color:var(--red);}
+  .reel.landed{animation:pop .35s ease;}
+  @keyframes blur{0%{filter:blur(0); transform:translateY(-6px);}50%{filter:blur(2px); transform:translateY(6px);}100%{filter:blur(0); transform:translateY(-6px);}}
+  @keyframes pop{0%{transform:scale(1);}40%{transform:scale(1.12) rotate(-3deg);}100%{transform:scale(1);}}
+
+  .lever{
+    width:100%; max-width:320px; border:none; background:transparent; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:6px; padding:0;
+  }
+  .lever .knob{
+    width:84px; height:84px; border-radius:50%; border:var(--line);
+    background:var(--red); color:#fff; font-size:30px; font-weight:900;
+    display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow);
+    transition:transform .08s, box-shadow .08s;
+  }
+  .lever:active .knob{transform:translateY(6px); box-shadow:2px 2px 0 var(--ink);}
+  .lever .cap{font-weight:800; color:#444;}
+
+  .auto-btn{align-self:center; font:inherit; font-weight:800; cursor:pointer; border:var(--line);
+    border-radius:999px; background:var(--yellow); padding:10px 20px; box-shadow:3px 3px 0 var(--ink);}
+  .auto-btn:active{transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink);}
+
+  /* ── 本注托盘 ── */
+  .tray{display:flex; flex-direction:column; gap:12px;}
+  .tray-group{display:flex; flex-direction:column; gap:6px;}
+  .tray-label{font-weight:800; font-size:13px; color:#666;}
+  .balls{display:flex; flex-wrap:wrap; gap:8px;}
+  .ball{
+    width:42px; height:42px; border-radius:50%; border:var(--line);
+    color:#fff; font-weight:900; font-size:18px;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:2px 2px 0 var(--ink); animation:drop .25s ease;
+  }
+  @keyframes drop{0%{transform:translateY(-10px) scale(.7); opacity:0;}100%{transform:none; opacity:1;}}
+
+  /* ── 选号单结果 ── */
+  .sheet{background:#fff; border:var(--line); border-radius:16px; box-shadow:var(--shadow); padding:16px;}
+  .sheet h2{margin:0 0 4px; font-size:18px; color:var(--red); text-align:center;}
+  .sheet .sub{text-align:center; font-size:12px; color:#888; margin-bottom:12px;}
+  .bet{border-top:2px dashed #ccc; padding:12px 0;}
+  .bet:first-of-type{border-top:none;}
+  .bet .t{font-weight:800; margin-bottom:6px;}
+  .bet .line{display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:4px 0;}
+  .bet .tag{font-size:12px; font-weight:800; color:#666; min-width:42px;}
+  .sheet pre{white-space:pre-wrap; font-family:inherit; font-size:13px; margin:0; display:none;}
+  .sheet-total{text-align:center; font-weight:800; margin-top:14px; font-size:16px; color:var(--ink);
+    border-top:2px dashed #ccc; padding-top:12px;}
+  #drawnLog{max-height:40vh; overflow-y:auto; display:flex; flex-direction:column; gap:10px; margin-top:4px;}
+  #drawnLog .bet{border-top:none; padding:8px 0;}
+
+  /* ── Toast ── */
+  .toast-box{position:fixed; left:50%; bottom:90px; transform:translateX(-50%);
+    display:flex; flex-direction:column; gap:8px; z-index:50; pointer-events:none;}
+  .toast{background:var(--ink); color:#fff; font-weight:800; padding:12px 18px; border-radius:12px;
+    box-shadow:var(--shadow); animation:tin .25s ease;}
+  @keyframes tin{from{transform:translateY(14px); opacity:0;}to{transform:none; opacity:1;}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>LuckyReel</h1>
+    <p>拨动摇杆，模拟真实摇号 ✦ 双色球 / 大乐透 / 快乐8</p>
+  </header>
+
+  <!-- 设置页 -->
+  <section class="view active" id="setup">
+    <div class="card">
+      <p class="section-title">① 选择彩种</p>
+      <div class="lottery-row" id="lotteryRow"></div>
+    </div>
+    <div class="card" id="playCard">
+      <p class="section-title">② 选择玩法</p>
+      <div id="playArea"></div>
+    </div>
+    <div class="card">
+      <p class="section-title">③ 注数</p>
+      <div class="stepper">
+        <span class="label">共摇几注</span>
+        <div class="ctrl">
+          <button class="round" id="betMinus">−</button>
+          <span class="val" id="betVal">1</span>
+          <button class="round" id="betPlus">+</button>
+        </div>
+      </div>
+    </div>
+    <button class="btn primary block" id="startBtn">开始摇奖 🎰</button>
+  </section>
+
+  <!-- 摇奖机页 -->
+  <section class="view" id="machine">
+    <div class="topbar">
+      <button class="back" id="backBtn">← 返回</button>
+      <div class="head-name" id="headName"></div>
+      <div style="width:64px"></div>
+    </div>
+    <div class="progress" id="progress"></div>
+    <div class="machine">
+      <div class="reel" id="reel"><span id="reelNum">--</span></div>
+      <button class="lever" id="lever">
+        <span class="knob">PULL</span>
+        <span class="cap">拨动摇杆出一号</span>
+      </button>
+      <button class="auto-btn" id="autoBtn">⚡ 自动摇完本注</button>
+    </div>
+    <div class="card">
+      <p class="section-title">本注号码</p>
+      <div class="tray" id="tray"></div>
+    </div>
+    <div class="card" id="drawnCard" style="display:none">
+      <p class="section-title">已摇出记录</p>
+      <div id="drawnLog"></div>
+    </div>
+  </section>
+
+  <!-- 结果页 -->
+  <section class="view" id="result">
+    <div class="sheet" id="sheet"></div>
+    <button class="btn blue block" id="copyBtn">📋 一键复制选号单</button>
+    <button class="btn block" id="againBtn">↻ 重新摇奖</button>
+  </section>
+</div>
+
+<div class="toast-box" id="toastBox"></div>
+
+<script>
+"use strict";
+/* ============================================================
+   随机性基底：移植自 DestinyDraw 的「物理摇奖机」模型
+   - secureRandomInt() 基于 crypto.getRandomValues（消除取模偏差）
+   - 每次抽球 = 对剩余球池多轮洗牌后取 1 枚（不放回）
+   ============================================================ */
+const _buf = new Uint32Array(1);
+function secureRandomInt(maxExclusive){
+  if(!Number.isInteger(maxExclusive) || maxExclusive <= 0) throw new Error('maxExclusive 必须是正整数');
+  const maxU = 0x100000000;
+  const limit = maxU - (maxU % maxExclusive);
+  for(;;){
+    _buf[0] = 0;
+    crypto.getRandomValues(_buf);
+    if(_buf[0] < limit) return _buf[0] % maxExclusive;
+  }
+}
+function shuffleInPlace(arr, rounds){
+  const r = rounds || Math.max(8, arr.length);
+  for(let k=0;k<r;k++){
+    for(let i=arr.length-1;i>0;i--){
+      const j = secureRandomInt(i+1);
+      const t=arr[i]; arr[i]=arr[j]; arr[j]=t;
+    }
+  }
+}
+// 从球池（原地）抽取 1 枚并不放回
+function drawOne(pool){
+  shuffleInPlace(pool, Math.max(6, pool.length));
+  return pool.pop();
+}
+const pad = n => String(n).padStart(2,'0');
+
+/* ── 彩种配置 ── */
+const LOTTERIES = {
+  ssq:{
+    name:'双色球',
+    groups:[ {key:'red',label:'红球',min:1,max:33,color:'#E60012',base:6,cap:20},
+             {key:'blue',label:'蓝球',min:1,max:16,color:'#0078F0',base:1,cap:8} ]
+  },
+  dlt:{
+    name:'大乐透',
+    groups:[ {key:'front',label:'前区',min:1,max:35,color:'#E60012',base:5,cap:20},
+             {key:'back',label:'后区',min:1,max:12,color:'#0078F0',base:2,cap:8} ]
+  },
+  kl8:{
+    name:'快乐8',
+    groups:[ {key:'ball',label:'选号',min:1,max:80,color:'#E60012',base:5} ],
+    pickMode:true
+  }
+};
+
+/* ── 设置页状态 ── */
+const setup = { lottery:'ssq', mode:'single', counts:{}, pick:5, extra:0, bets:1 };
+function resetCounts(){
+  setup.counts = {};
+  LOTTERIES[setup.lottery].groups.forEach(g => setup.counts[g.key] = g.base);
+}
+resetCounts();
+
+/* ── 小工具 ── */
+function el(tag, cls, txt){ const e=document.createElement(tag); if(cls) e.className=cls; if(txt!=null) e.textContent=txt; return e; }
+function $(id){ return document.getElementById(id); }
+function showView(id){ document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); $(id).classList.add('active'); }
+function toast(msg){
+  const t = el('div','toast',msg); $('toastBox').appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; setTimeout(()=>t.remove(),250); }, 1800);
+}
+
+/* ── 渲染设置页 ── */
+function renderSetup(){
+  // 彩种
+  const lr = $('lotteryRow'); lr.innerHTML='';
+  Object.keys(LOTTERIES).forEach(k=>{
+    const b = el('button','btn'+(setup.lottery===k?' on':''), LOTTERIES[k].name);
+    b.onclick = ()=>{ setup.lottery=k; setup.mode='single'; resetCounts();
+      if(k==='kl8') setup.pick=5; setup.extra=0; renderSetup(); };
+    lr.appendChild(b);
+  });
+  // 玩法
+  const pa = $('playArea'); pa.innerHTML='';
+  const L = LOTTERIES[setup.lottery];
+
+  if(L.pickMode){
+    // 快乐8：选N + 单式/复式
+    pa.appendChild(el('div','hint','选择「选几」'));
+    const pickRow = el('div','pick-row');
+    for(let n=1;n<=10;n++){
+      const c = el('button','chip'+(setup.pick===n?' on':''),'选'+n);
+      c.onclick = ()=>{ setup.pick=n; setup.mode='single'; setup.extra=0; renderSetup(); };
+      pickRow.appendChild(c);
+    }
+    pa.appendChild(pickRow);
+    pa.appendChild(modeChips());
+    if(setup.mode==='compound'){
+      pa.appendChild(stepperEl('额外球数（复式）', ()=>setup.extra, v=>setup.extra=v, 0, 8));
+      pa.appendChild(el('div','hint','即「选'+setup.pick+'」再加 '+setup.extra+' 球 = '+(setup.pick+setup.extra)+' 球/注'));
+    }
+  } else {
+    pa.appendChild(modeChips());
+    if(setup.mode==='compound'){
+      L.groups.forEach(g=>{
+        pa.appendChild(stepperEl(g.label+'（复式）', ()=>setup.counts[g.key], v=>setup.counts[g.key]=v, g.base, g.cap));
+      });
+    } else {
+      const txt = L.groups.map(g=>g.label+' '+g.base+' 个').join(' + ');
+      pa.appendChild(el('div','hint','单式：'+txt));
+    }
+  }
+  $('betVal').textContent = setup.bets;
+}
+function modeChips(){
+  const row = el('div','chip-row');
+  ['single','compound'].forEach(m=>{
+    const c = el('button','chip'+(setup.mode===m?' on':''), m==='single'?'单式':'复式');
+    c.onclick = ()=>{ setup.mode=m; renderSetup(); };
+    row.appendChild(c);
+  });
+  return row;
+}
+function stepperEl(label, get, set, min, max){
+  const wrap = el('div','stepper');
+  wrap.appendChild(el('span','label',label));
+  const ctrl = el('div','ctrl');
+  const minus = el('button','round','−');
+  const val = el('span','val', String(get()));
+  const plus = el('button','round','+');
+  minus.disabled = get()<=min; plus.disabled = get()>=max;
+  minus.onclick = ()=>{ if(get()>min){ set(get()-1); renderSetup(); } };
+  plus.onclick  = ()=>{ if(get()<max){ set(get()+1); renderSetup(); } };
+  ctrl.append(minus,val,plus); wrap.appendChild(ctrl);
+  return wrap;
+}
+
+// 注数步进
+$('betMinus').onclick = ()=>{ if(setup.bets>1){ setup.bets--; $('betVal').textContent=setup.bets; } };
+$('betPlus').onclick  = ()=>{ if(setup.bets<50){ setup.bets++; $('betVal').textContent=setup.bets; } };
+
+/* ── 构建本注抽球计划 ── */
+function buildDrawPlan(){
+  const L = LOTTERIES[setup.lottery];
+  if(L.pickMode){
+    const count = setup.pick + (setup.mode==='compound'? setup.extra : 0);
+    return [ {key:'ball', label:'选号', color:L.groups[0].color, min:1, max:80, count} ];
+  }
+  return L.groups.map(g=>({ ...g, count: setup.counts[g.key] }));
+}
+function playName(){
+  const L = LOTTERIES[setup.lottery];
+  if(L.pickMode){
+    const n=setup.pick, extra=setup.mode==='compound'?setup.extra:0;
+    return extra>0 ? `选${n}复式${n+extra}` : `选${n}`;
+  }
+  const atBase = L.groups.every(g=>setup.counts[g.key]===g.base);
+  if(atBase) return `单式${L.groups[0].base}+${L.groups[1].base}`;
+  return `复式${L.groups.map(g=>setup.counts[g.key]).join('+')}`;
+}
+
+/* ── 摇奖状态机 ── */
+const state = {
+  phase:'setup', drawPlan:[], bets:1, header:'',
+  currentBet:0, groupIdx:0, remaining:[], results:[],
+  drawnInBet:0, totalPerBet:0, animating:false, spinTimer:null
+};
+
+function startMachine(){
+  state.drawPlan = buildDrawPlan();
+  state.bets = setup.bets;
+  state.header = LOTTERIES[setup.lottery].name + ' · ' + playName();
+  state.totalPerBet = state.drawPlan.reduce((s,g)=>s+g.count,0);
+  state.results = Array.from({length:state.bets},()=>({}));
+  state.currentBet = 0; state.phase='drawing';
+  $('headName').textContent = state.header;
+  showView('machine');
+  startBet();
+}
+function startBet(){
+  state.groupIdx = 0; state.drawnInBet = 0;
+  state.remaining = state.drawPlan.map(g=>{
+    const pool=[]; for(let i=g.min;i<=g.max;i++) pool.push(i); return pool;
+  });
+  $('reelNum').textContent='--';
+  renderTray(); updateProgress(); renderDrawnLog();
+}
+function updateProgress(){
+  $('progress').textContent = `第 ${state.currentBet+1}/${state.bets} 注 · 已摇 ${state.drawnInBet}/${state.totalPerBet} 球`;
+}
+function renderTray(){
+  const tray=$('tray'); tray.innerHTML='';
+  const bet = state.results[state.currentBet]||{};
+  state.drawPlan.forEach(g=>{
+    const wrap=el('div','tray-group');
+    wrap.appendChild(el('div','tray-label',g.label));
+    const balls=el('div','balls');
+    (bet[g.key]||[]).forEach(n=>{
+      const b=el('span','ball',pad(n)); b.style.background=g.color; balls.appendChild(b);
+    });
+    wrap.appendChild(balls); tray.appendChild(wrap);
+  });
+}
+function renderDrawnLog(){
+  const card=$('drawnCard'), log=$('drawnLog');
+  const done=[];
+  for(let i=0;i<state.currentBet;i++) done.push(state.results[i]);
+  if(done.length===0){ card.style.display='none'; log.innerHTML=''; return; }
+  card.style.display='';
+  log.innerHTML='';
+  done.forEach((bet,i)=>{
+    const b=el('div','bet');
+    b.appendChild(el('div','t','第 '+(i+1)+' 注'));
+    state.drawPlan.forEach(g=>{
+      const line=el('div','line');
+      line.appendChild(el('span','tag',g.label));
+      (bet[g.key]||[]).forEach(n=>{
+        const ball=el('span','ball',pad(n)); ball.style.background=g.color;
+        ball.style.width='30px'; ball.style.height='30px'; ball.style.fontSize='13px';
+        line.appendChild(ball);
+      });
+      b.appendChild(line);
+    });
+    log.appendChild(b);
+  });
+}
+function recordBall(key,num){
+  const bet = state.results[state.currentBet];
+  if(!bet[key]) bet[key]=[];
+  bet[key].push(num); bet[key].sort((a,b)=>a-b);
+}
+
+/* ── 拨杆抽一号 ── */
+function pull(){
+  if(state.phase!=='drawing' || state.animating) return;
+  const g = state.drawPlan[state.groupIdx];
+  const pool = state.remaining[state.groupIdx];
+  if(!pool || !pool.length) return;
+  state.animating = true;
+  const finalNum = drawOne(pool);
+  spinReel(g, finalNum, ()=>{
+    recordBall(g.key, finalNum);
+    state.drawnInBet++;
+    renderTray(); updateProgress();
+    state.animating = false;
+    checkAdvance();
+  });
+}
+function spinReel(g, finalNum, done){
+  const reel=$('reel'), numEl=$('reelNum');
+  reel.classList.add('spinning');
+  let ticks=0; const total=14;
+  clearInterval(state.spinTimer);
+  state.spinTimer=setInterval(()=>{
+    numEl.textContent = pad(g.min + secureRandomInt(g.max-g.min+1));
+    if(++ticks>=total){
+      clearInterval(state.spinTimer);
+      setTimeout(()=>{
+        numEl.textContent = pad(finalNum);
+        reel.classList.remove('spinning');
+        reel.classList.add('landed');
+        beep();
+        setTimeout(()=>reel.classList.remove('landed'),400);
+        done();
+      },120);
+    }
+  },55);
+}
+function checkAdvance(){
+  const g = state.drawPlan[state.groupIdx];
+  if((state.results[state.currentBet][g.key]||[]).length >= g.count){
+    state.groupIdx++;
+    if(state.groupIdx >= state.drawPlan.length){
+      if(state.currentBet < state.bets-1){
+        toast('第 '+(state.currentBet+1)+' 注完成！');
+        state.currentBet++;
+        renderDrawnLog();
+        setTimeout(startBet, 750);
+      } else {
+        finishAll();
+      }
+    }
+  }
+}
+// 自动摇完本注（无动画，直接填满）
+function autoFinishBet(){
+  if(state.phase!=='drawing' || state.animating) return;
+  while(state.groupIdx < state.drawPlan.length){
+    const g = state.drawPlan[state.groupIdx];
+    const pool = state.remaining[state.groupIdx];
+    while((state.results[state.currentBet][g.key]||[]).length < g.count && pool.length){
+      recordBall(g.key, drawOne(pool));
+      state.drawnInBet++;
+    }
+    state.groupIdx++;
+  }
+  renderTray(); updateProgress();
+  if(state.currentBet < state.bets-1){
+    toast('第 '+(state.currentBet+1)+' 注完成！');
+    state.currentBet++;
+    renderDrawnLog();
+    setTimeout(startBet, 400);
+  } else {
+    finishAll();
+  }
+}
+
+/* ── 结果 ── */
+function finishAll(){
+  state.phase='done';
+  renderResult();
+  showView('result');
+}
+function renderResult(){
+  const sheet=$('sheet'); sheet.innerHTML='';
+  sheet.appendChild(el('h2',null, LOTTERIES[setup.lottery].name));
+  sheet.appendChild(el('div','sub', playName() + ' · 共 '+state.bets+' 注'));
+  state.results.forEach((bet,i)=>{
+    const b=el('div','bet');
+    b.appendChild(el('div','t', '第 '+(i+1)+' 注'));
+    state.drawPlan.forEach(g=>{
+      const line=el('div','line');
+      line.appendChild(el('span','tag', g.label));
+      (bet[g.key]||[]).forEach(n=>{
+        const ball=el('span','ball',pad(n)); ball.style.background=g.color;
+        ball.style.width='32px'; ball.style.height='32px'; ball.style.fontSize='14px';
+        line.appendChild(ball);
+      });
+      b.appendChild(line);
+    });
+    sheet.appendChild(b);
+  });
+  const total = state.bets * 2;
+  sheet.appendChild(el('div','sheet-total', '合计：¥' + total + '（' + state.bets + ' 注 × 2 元）'));
+}
+function buildSheetText(){
+  let t = LOTTERIES[setup.lottery].name + ' · ' + playName() + '\n';
+  state.results.forEach((bet,i)=>{
+    t += '第'+(i+1)+'注：';
+    t += state.drawPlan.map(g=>(g.label+' '+(bet[g.key]||[]).map(pad).join(' '))).join(' | ');
+    t += '\n';
+  });
+  t += '\n合计：¥' + (state.bets * 2) + '（' + state.bets + ' 注 × 2 元）';
+  return t.trim();
+}
+async function copySheet(){
+  const text = buildSheetText();
+  try{ await navigator.clipboard.writeText(text); }
+  catch(e){
+    const ta=document.createElement('textarea'); ta.value=text;
+    ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta);
+    ta.select(); try{ document.execCommand('copy'); }catch(_){}
+    ta.remove();
+  }
+  toast('选号单已复制 ✓');
+}
+
+/* ── 轻微触感音（零依赖）── */
+let actx=null;
+function beep(){
+  try{
+    actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+    const o=actx.createOscillator(), gn=actx.createGain();
+    o.type='square'; o.frequency.value=660; gn.gain.value=0.04;
+    o.connect(gn); gn.connect(actx.destination);
+    o.start(); o.stop(actx.currentTime+0.08);
+  }catch(e){}
+}
+
+/* ── 绑定 ── */
+$('startBtn').onclick = startMachine;
+$('lever').onclick = pull;
+$('autoBtn').onclick = autoFinishBet;
+$('backBtn').onclick = ()=>{ state.phase='setup'; showView('setup'); };
+$('againBtn').onclick = ()=>{ state.phase='setup'; renderSetup(); showView('setup'); };
+$('copyBtn').onclick = copySheet;
+
+renderSetup();
+</script>
+</body>
+</html>
