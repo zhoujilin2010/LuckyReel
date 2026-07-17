@@ -386,6 +386,27 @@ function buildDrawPlan(){
   }
   return L.groups.map(g=>({ ...g, count: setup.counts[g.key] }));
 }
+
+/* ── 真实彩票注数（复式按组合数展开）── */
+function nCr(n, r){
+  if(r<0 || r>n) return 0;
+  if(r===0 || r===n) return 1;
+  r = Math.min(r, n-r);
+  let res = 1;
+  for(let i=1; i<=r; i++) res = res*(n-i+1)/i;
+  return Math.round(res);
+}
+function sheetBets(){            // 单张选号单对应的真实注数
+  const L = LOTTERIES[setup.lottery];
+  if(L.pickMode){
+    const n = setup.pick;
+    const k = setup.pick + (setup.mode==='compound' ? setup.extra : 0);
+    return nCr(k, n);
+  }
+  let bets = 1;
+  L.groups.forEach(g => { bets *= nCr(setup.counts[g.key], g.base); });
+  return bets;
+}
 function playName(){
   const L = LOTTERIES[setup.lottery];
   if(L.pickMode){
@@ -552,7 +573,7 @@ function finishAll(){
 function renderResult(){
   const sheet=$('sheet'); sheet.innerHTML='';
   sheet.appendChild(el('h2',null, LOTTERIES[setup.lottery].name));
-  sheet.appendChild(el('div','sub', playName() + ' · 共 '+state.bets+' 注'));
+  sheet.appendChild(el('div','sub', playName() + ' · 共 '+state.bets+' 张'));
   state.results.forEach((bet,i)=>{
     const b=el('div','bet');
     b.appendChild(el('div','t', '第 '+(i+1)+' 注'));
@@ -568,8 +589,10 @@ function renderResult(){
     });
     sheet.appendChild(b);
   });
-  const total = state.bets * 2;
-  sheet.appendChild(el('div','sheet-total', '合计：¥' + total + '（' + state.bets + ' 注 × 2 元）'));
+  const perSheet = sheetBets();
+  const totalBets = perSheet * state.bets;
+  const total = totalBets * 2;
+  sheet.appendChild(el('div','sheet-total', '合计：¥' + total + '（共 ' + totalBets + ' 注 × 2 元）'));
 }
 function buildSheetText(){
   let t = LOTTERIES[setup.lottery].name + ' · ' + playName() + '\n';
@@ -578,7 +601,8 @@ function buildSheetText(){
     t += state.drawPlan.map(g=>(g.label+' '+(bet[g.key]||[]).map(pad).join(' '))).join(' | ');
     t += '\n';
   });
-  t += '\n合计：¥' + (state.bets * 2) + '（' + state.bets + ' 注 × 2 元）';
+  const sheetTotalBets = sheetBets() * state.bets;
+  t += '\n合计：¥' + (sheetTotalBets * 2) + '（共 ' + sheetTotalBets + ' 注 × 2 元）';
   return t.trim();
 }
 async function copySheet(){
