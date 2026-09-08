@@ -50,7 +50,9 @@
   @keyframes flicker{0%,100%{opacity:.92;}50%{opacity:1;}}
 
   .app{
-    width:100%; max-width:480px; min-height:100vh; min-height:100dvh;
+    width:100%; max-width:480px;
+    /* 固定视口高度：header 固定 + view 内部滚动，保证摇奖机页两区始终在视口内 */
+    height:100vh; height:100dvh; overflow:hidden;
     display:flex; flex-direction:column; position:relative; z-index:1;
     background:transparent;
     padding:env(safe-area-inset-top) 14px calc(14px + env(safe-area-inset-bottom));
@@ -112,8 +114,28 @@
   }
   @keyframes blink{0%,49%{opacity:1;}50%,100%{opacity:.35;}}
 
-  .view{display:none; flex:1; flex-direction:column; gap:16px; padding-top:6px;}
+  /* view 占满剩余高度并内部滚动（设置页/结果页靠它滚动） */
+  .view{
+    display:none; flex:1 1 auto; min-height:0; flex-direction:column;
+    gap:16px; padding-top:6px; overflow-y:auto; overscroll-behavior:contain;
+  }
   .view.active{display:flex;}
+
+  /* ══ 摇奖机页：上下两区固定布局（方案 A）══
+     上区 .machine-top  固定：返回/进度/卷轴/摇杆/按钮
+     下区 .machine-bottom 占满剩余并可独立滚动：本注号码 + 已摇出记录
+     → 手机竖屏无需滚动即可看到完整号码区 */
+  #machine.active{overflow:hidden; gap:10px; padding-top:4px;}
+  .machine-top{
+    flex:0 0 auto; display:flex; flex-direction:column; gap:8px;
+  }
+  .machine-bottom{
+    flex:1 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain;
+    display:flex; flex-direction:column; gap:10px; padding-bottom:4px;
+  }
+  /* 按钮横排，省纵向空间 */
+  .act-row{display:flex; gap:8px; align-items:center; justify-content:center; flex-wrap:wrap;}
+  .act-row .auto-btn,.act-row .redo-btn{margin-top:0;}
 
   /* ── 通用按钮 / 街机实体按键 ── */
   .btn{
@@ -218,17 +240,15 @@
     box-shadow:inset 0 0 18px rgba(57,255,136,.12);}
 
   .machine{
-    /* 不强制占满（flex:0），顶部对齐，让「本注号码」自然紧跟其下，
-       配合 vmin 缩放确保常见手机竖屏可一屏看到完整号码 */
     flex:0 0 auto; min-height:0;
     display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
-    gap:clamp(6px, 1.8vmin, 14px);
-    padding:clamp(2px, 1vmin, 6px) 0 clamp(4px, 1.2vmin, 10px);
+    gap:clamp(5px, 1.4vmin, 12px);
+    padding:clamp(2px, 0.8vmin, 6px) 0 clamp(2px, 0.8vmin, 6px);
   }
   .reel{
-    width:clamp(112px, 26vmin, 200px);
-    height:clamp(112px, 26vmin, 200px);
-    border-radius:clamp(14px, 3.5vmin, 22px);
+    width:clamp(92px, 24vmin, 200px);
+    height:clamp(92px, 24vmin, 200px);
+    border-radius:clamp(12px, 3vmin, 22px);
     position:relative; overflow:hidden;
     border:3px solid rgba(0,229,255,.55);
     background:radial-gradient(120% 120% at 50% 0%,#10203A,#05070F 72%);
@@ -247,7 +267,7 @@
     background:linear-gradient(180deg,rgba(255,255,255,.13),transparent); pointer-events:none;}
   #reelNum{
     position:relative;
-    font-size:clamp(48px, 12vmin, 84px);
+    font-size:clamp(40px, 10vmin, 84px);
     font-weight:900; font-family:var(--num);
     color:#EAFBFF; font-variant-numeric:tabular-nums; letter-spacing:2px;
     text-shadow:0 0 8px var(--blue),0 0 24px rgba(0,229,255,.75),0 0 48px rgba(0,229,255,.45);
@@ -282,12 +302,12 @@
     flex:0 0 auto;
   }
   .lever .knob{
-    width:clamp(64px, 16vmin, 92px);
-    height:clamp(64px, 16vmin, 92px);
+    width:clamp(56px, 14vmin, 92px);
+    height:clamp(56px, 14vmin, 92px);
     border-radius:50%;
     border:3px solid rgba(255,255,255,.55);
     background:radial-gradient(60% 60% at 35% 28%,#FF9AAC,var(--red) 58%,#A8001E);
-    color:#fff; font-size:clamp(16px, 4vmin, 24px); font-weight:900; font-family:var(--num); letter-spacing:1px;
+    color:#fff; font-size:clamp(14px, 3.4vmin, 24px); font-weight:900; font-family:var(--num); letter-spacing:1px;
     display:flex; align-items:center; justify-content:center; position:relative;
     box-shadow:0 8px 0 #6E0018, 0 0 34px rgba(255,45,85,.6), inset 0 -6px 10px rgba(0,0,0,.35);
     animation:knobIdle 1.9s ease-in-out infinite;
@@ -387,63 +407,96 @@
   }
 
   /* ════════════════════════════════════════════════════════════
-     桌面端适配（>=720px）：容器居中并扩宽到 640px，
-     摇奖机页与设置页改为两列布局，卷轴/摇杆放大
+     中大屏适配
+     ① 720–899px（平板/小窗口）：单列，容器 600px，元素适度放大
+     ② >=900px（桌面）：整体垂直水平居中，容器 860px，
+        摇奖机页左右两列（左：操作区 / 右：号码区）
      ════════════════════════════════════════════════════════════ */
-  @media (min-width: 720px){
-    body{align-items:flex-start; padding:0;}
-    .app{
-      max-width:640px;
-      padding:clamp(14px, 3vh, 32px) 22px calc(22px + env(safe-area-inset-bottom));
-      min-height:100vh; min-height:100dvh;
-    }
-    .app::before,.app::after{ width:6px; }
-    header h1{font-size:36px;}
-    header p{font-size:13px;}
 
-    /* ─ 设置页：两列（仅在 active 时） ─ */
+  /* ① 平板 / 中等窗口 */
+  @media (min-width: 720px){
+    .app{max-width:600px; padding:20px 22px calc(22px + env(safe-area-inset-bottom));}
+    .app::before,.app::after{width:6px;}
+    header h1{font-size:34px;}
+    header p{font-size:13px;}
+    /* 操作区适度放大 */
+    #machine.active .reel{width:130px; height:130px; border-radius:18px;}
+    #machine.active #reelNum{font-size:58px;}
+    #machine.active .lever .knob{width:74px; height:74px; font-size:19px;}
+    #machine.active .auto-btn,#machine.active .redo-btn{font-size:14px;}
+    #machine.active .progress{font-size:15px; padding:9px 12px;}
+    #machine.active{gap:14px;}
+    .machine-top{gap:12px;}
+  }
+
+  /* ② 桌面：居中 + 两列 */
+  @media (min-width: 900px){
+    /* 整体在视口中垂直水平居中，不再「靠上」 */
+    body{align-items:center; justify-content:center; min-height:100vh; min-height:100dvh;}
+    .app{
+      max-width:860px;
+      height:auto; max-height:calc(100dvh - 48px);
+      padding:22px 26px calc(22px + env(safe-area-inset-bottom));
+      border-radius:20px;
+    }
+    header{padding:10px 0 8px;}
+    header h1{font-size:38px;}
+    header p{font-size:14px;}
+
+    /* 设置页：两列（仅在 active 时，避免 !important 覆盖 display:none） */
     #setup.active{display:grid !important; grid-template-columns:1fr 1fr; gap:18px; align-content:start;}
-    #setup.active > .card{min-height:0;}
-    #setup.active > .btn.primary{grid-column:1 / -1;}
-    /* 让 ① 选择彩种 + ② 选择玩法 共占左列；③ 注数 占右列顶；开始按钮占整行 */
     #setup.active > .card:nth-of-type(1){grid-column:1; grid-row:1;}
     #setup.active > .card:nth-of-type(2){grid-column:1; grid-row:2;}
     #setup.active > .card:nth-of-type(3){grid-column:2; grid-row:1 / span 2;}
     #setup.active > #startBtn{grid-column:1 / -1; grid-row:3;}
 
-    /* ─ 摇奖机页：两列（仅在 active 时） ─ */
+    /* 摇奖机页：左操作区 / 右号码区（仅 active 时） */
     #machine.active{
-      display:grid !important;
-      grid-template-columns:minmax(0, 1.05fr) minmax(0, 1fr);
-      grid-template-rows:auto auto 1fr;
-      gap:16px 22px; align-content:start;
+      display:grid !important; overflow:hidden;
+      grid-template-columns:380px minmax(0,1fr);
+      grid-template-rows:minmax(0,1fr);
+      gap:0 24px; align-items:stretch; padding-top:0;
     }
-    #machine.active > .topbar{grid-column:1 / -1; grid-row:1;}
-    #machine.active > .progress{grid-column:1 / -1; grid-row:2; font-size:15px; padding:10px 14px;}
-    /* 卷轴/摇杆/按钮区 放左下 */
-    #machine.active > .machine{
-      grid-column:1; grid-row:3;
-      align-self:start;
-      gap:18px; padding-top:6px;
+    #machine.active > .machine-top{
+      grid-column:1; grid-row:1;
+      display:flex; flex-direction:column; justify-content:center; gap:16px;
+      min-height:0;
     }
-    /* 「本注号码」+「已摇出记录」放右 */
-    #machine.active > .card{grid-column:2; grid-row:3; align-self:start; max-height:calc(100vh - 220px); overflow-y:auto;}
+    #machine.active > .machine-bottom{
+      grid-column:2; grid-row:1;
+      min-height:0; overflow-y:auto; padding:2px 4px 2px 0;
+    }
+    /* 桌面：卷轴/摇杆放大 */
+    #machine.active .reel{width:190px; height:190px; border-radius:24px;}
+    #machine.active #reelNum{font-size:88px;}
+    #machine.active .lever .knob{width:96px; height:96px; font-size:25px;}
+    #machine.active .lever .cap{font-size:13px;}
+    #machine.active .machine{gap:18px;}
+    #machine.active .auto-btn{font-size:15px; padding:11px 20px;}
+    #machine.active .redo-btn{font-size:15px; padding:11px 22px;}
+    #machine.active .progress{font-size:16px; padding:11px 14px;}
 
-    /* 桌面端：卷轴/摇杆/按钮放大 */
-    #machine.active .reel{width:170px; height:170px; border-radius:22px;}
-    #machine.active #reelNum{font-size:80px;}
-    #machine.active .lever .knob{width:90px; height:90px; font-size:24px;}
-    #machine.active .auto-btn{font-size:15px; padding:11px 22px;}
-    #machine.active .redo-btn{font-size:15px; padding:12px 26px;}
-
-    /* ─ 结果页：限宽并居中（仅 active 时） ─ */
+    /* 结果页 */
     #result.active{align-items:stretch;}
-    #result.active .sheet{padding:22px;}
+    #result.active .sheet{padding:24px; max-width:720px; margin:0 auto; width:100%;}
+    #result.active > .btn{max-width:720px; margin-left:auto; margin-right:auto;}
   }
   /* 窄屏微调（<360px 小屏手机） */
   @media (max-width: 359px){
     header h1{font-size:26px; letter-spacing:2px;}
-    .machine .lever .knob{font-size:14px;}
+    .machine .lever .knob{font-size:13px;}
+    .act-row{gap:6px;}
+    .act-row .auto-btn,.act-row .redo-btn{font-size:12px; padding:8px 12px;}
+  }
+  /* 矮屏（如 iPhone SE 667px）：压缩顶部招牌，把空间让给号码区 */
+  @media (max-height: 720px) and (max-width: 899px){
+    header{padding:6px 0 2px; margin:0 0 2px;}
+    header h1{font-size:24px; letter-spacing:2px; padding-top:4px;}
+    header p{display:none;}
+    .slot{width:64px; height:18px; margin:6px auto 0;}
+    .coin{font-size:10px; letter-spacing:2px; margin:5px auto 0;}
+    .app{padding:env(safe-area-inset-top) 12px calc(12px + env(safe-area-inset-bottom));}
+    .machine .lever .cap{display:none;}
   }
 </style>
 </head>
@@ -482,28 +535,34 @@
 
   <!-- 摇奖机页 -->
   <section class="view" id="machine" data-page-node-id="mBMFejwV6uMERh2wZglARd">
-    <div class="topbar" data-page-node-id="ac7TDSpTaxzkEpOcMeLyzV">
-      <button class="back" id="backBtn" data-page-node-id="gJXLDUzs5MdmjmAZznFdV8">← 返回</button>
-      <div class="head-name" id="headName" data-page-node-id="AemerOR2HkPiyBAjaFX7IL"></div>
-      <div style="width:64px" data-page-node-id="Rkuw45BvNVe3kKk3OrxpGP"></div>
+    <div class="machine-top">
+      <div class="topbar" data-page-node-id="ac7TDSpTaxzkEpOcMeLyzV">
+        <button class="back" id="backBtn" data-page-node-id="gJXLDUzs5MdmjmAZznFdV8">← 返回</button>
+        <div class="head-name" id="headName" data-page-node-id="AemerOR2HkPiyBAjaFX7IL"></div>
+        <div style="width:64px" data-page-node-id="Rkuw45BvNVe3kKk3OrxpGP"></div>
+      </div>
+      <div class="progress" id="progress" data-page-node-id="TOFtACFRBLODCN5rdxS1i0"></div>
+      <div class="machine" data-page-node-id="uabCOhVJCqMjGYvRbnpsdW">
+        <div class="reel" id="reel" data-page-node-id="2o1DJbBC1aqMODa14FBtBx"><span id="reelNum" data-page-node-id="JwEDDqkAS5Xtv8WmmRej78">--</span></div>
+        <button class="lever" id="lever" data-page-node-id="19xiV7BHGRB54sXzl7tz3K">
+          <span class="knob" data-page-node-id="Xbj5QIwLOMvyQlkhWGNKH5">PULL</span>
+          <span class="cap" data-page-node-id="MmHPNenj6hpw1BcsgWrlFt">拨动摇杆出一号</span>
+        </button>
+        <div class="act-row">
+          <button class="auto-btn" id="autoBtn" data-page-node-id="pBCwJJbN7tkKpFI5pHr46Z">⚡ 自动摇完本注</button>
+          <button class="redo-btn" id="redoBtn" data-page-node-id="hHO6OBOdfFVycl2B5bGGmS">↻ 重摇本注</button>
+        </div>
+      </div>
     </div>
-    <div class="progress" id="progress" data-page-node-id="TOFtACFRBLODCN5rdxS1i0"></div>
-    <div class="machine" data-page-node-id="uabCOhVJCqMjGYvRbnpsdW">
-      <div class="reel" id="reel" data-page-node-id="2o1DJbBC1aqMODa14FBtBx"><span id="reelNum" data-page-node-id="JwEDDqkAS5Xtv8WmmRej78">--</span></div>
-      <button class="lever" id="lever" data-page-node-id="19xiV7BHGRB54sXzl7tz3K">
-        <span class="knob" data-page-node-id="Xbj5QIwLOMvyQlkhWGNKH5">PULL</span>
-        <span class="cap" data-page-node-id="MmHPNenj6hpw1BcsgWrlFt">拨动摇杆出一号</span>
-      </button>
-      <button class="auto-btn" id="autoBtn" data-page-node-id="pBCwJJbN7tkKpFI5pHr46Z">⚡ 自动摇完本注</button>
-      <button class="redo-btn" id="redoBtn" data-page-node-id="hHO6OBOdfFVycl2B5bGGmS">↻ 重摇本注</button>
-    </div>
-    <div class="card" data-page-node-id="EKIyoev6iWoJ5PdEFrGqNE">
-      <p class="section-title" data-page-node-id="NCKGQKSHOhBPOe2I5jsBH5">本注号码</p>
-      <div class="tray" id="tray" data-page-node-id="HX0nFXgprY4lbqFbygllKu"></div>
-    </div>
-    <div class="card" id="drawnCard" style="display:none" data-page-node-id="0ZIgg9DpwFscQCCdy3mcuv">
-      <p class="section-title" data-page-node-id="86fVDysnJh1kwhAv7UPvzD">已摇出记录</p>
-      <div id="drawnLog" data-page-node-id="DutKkv4ZMU8C5N7KEvbEhF"></div>
+    <div class="machine-bottom">
+      <div class="card" data-page-node-id="EKIyoev6iWoJ5PdEFrGqNE">
+        <p class="section-title" data-page-node-id="NCKGQKSHOhBPOe2I5jsBH5">本注号码</p>
+        <div class="tray" id="tray" data-page-node-id="HX0nFXgprY4lbqFbygllKu"></div>
+      </div>
+      <div class="card" id="drawnCard" style="display:none" data-page-node-id="0ZIgg9DpwFscQCCdy3mcuv">
+        <p class="section-title" data-page-node-id="86fVDysnJh1kwhAv7UPvzD">已摇出记录</p>
+        <div id="drawnLog" data-page-node-id="DutKkv4ZMU8C5N7KEvbEhF"></div>
+      </div>
     </div>
   </section>
 
