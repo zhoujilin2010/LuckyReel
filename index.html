@@ -53,7 +53,9 @@
     width:100%; max-width:480px; min-height:100vh; min-height:100dvh;
     display:flex; flex-direction:column; position:relative; z-index:1;
     background:transparent;
-    padding:env(safe-area-inset-top) 16px calc(16px + env(safe-area-inset-bottom));
+    padding:env(safe-area-inset-top) 14px calc(14px + env(safe-area-inset-bottom));
+    /* 容器在桌面端居中并扩宽；手机保持 480px 单列 */
+    margin:0 auto;
   }
   /* 装饰③：机柜左右霓虹立柱 */
   .app::before,.app::after{
@@ -215,14 +217,25 @@
     padding:8px 10px; text-shadow:0 0 12px rgba(57,255,136,.75);
     box-shadow:inset 0 0 18px rgba(57,255,136,.12);}
 
-  .machine{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;}
+  .machine{
+    /* 不强制占满（flex:0），顶部对齐，让「本注号码」自然紧跟其下，
+       配合 vmin 缩放确保常见手机竖屏可一屏看到完整号码 */
+    flex:0 0 auto; min-height:0;
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    gap:clamp(6px, 1.8vmin, 14px);
+    padding:clamp(2px, 1vmin, 6px) 0 clamp(4px, 1.2vmin, 10px);
+  }
   .reel{
-    width:170px; height:170px; border-radius:22px; position:relative; overflow:hidden;
+    width:clamp(112px, 26vmin, 200px);
+    height:clamp(112px, 26vmin, 200px);
+    border-radius:clamp(14px, 3.5vmin, 22px);
+    position:relative; overflow:hidden;
     border:3px solid rgba(0,229,255,.55);
     background:radial-gradient(120% 120% at 50% 0%,#10203A,#05070F 72%);
     box-shadow:0 0 0 4px #05070F, 0 0 26px rgba(0,229,255,.45), inset 0 0 30px rgba(0,229,255,.15);
     display:flex; align-items:center; justify-content:center;
     animation:reelBreath 2.6s ease-in-out infinite;
+    flex:0 0 auto;
   }
   @keyframes reelBreath{
     0%,100%{box-shadow:0 0 0 4px #05070F,0 0 20px rgba(0,229,255,.32),inset 0 0 30px rgba(0,229,255,.12);}
@@ -233,7 +246,9 @@
   .reel::after{content:""; position:absolute; left:0; right:0; top:0; height:42%;
     background:linear-gradient(180deg,rgba(255,255,255,.13),transparent); pointer-events:none;}
   #reelNum{
-    position:relative; font-size:76px; font-weight:900; font-family:var(--num);
+    position:relative;
+    font-size:clamp(48px, 12vmin, 84px);
+    font-weight:900; font-family:var(--num);
     color:#EAFBFF; font-variant-numeric:tabular-nums; letter-spacing:2px;
     text-shadow:0 0 8px var(--blue),0 0 24px rgba(0,229,255,.75),0 0 48px rgba(0,229,255,.45);
   }
@@ -262,13 +277,17 @@
 
   .lever{
     width:100%; max-width:320px; border:none; background:transparent; cursor:pointer;
-    display:flex; flex-direction:column; align-items:center; gap:8px; padding:0;
+    display:flex; flex-direction:column; align-items:center; gap:6px; padding:0;
     position:relative; z-index:2;            /* 保证始终可点击 */
+    flex:0 0 auto;
   }
   .lever .knob{
-    width:88px; height:88px; border-radius:50%; border:3px solid rgba(255,255,255,.55);
+    width:clamp(64px, 16vmin, 92px);
+    height:clamp(64px, 16vmin, 92px);
+    border-radius:50%;
+    border:3px solid rgba(255,255,255,.55);
     background:radial-gradient(60% 60% at 35% 28%,#FF9AAC,var(--red) 58%,#A8001E);
-    color:#fff; font-size:24px; font-weight:900; font-family:var(--num); letter-spacing:1px;
+    color:#fff; font-size:clamp(16px, 4vmin, 24px); font-weight:900; font-family:var(--num); letter-spacing:1px;
     display:flex; align-items:center; justify-content:center; position:relative;
     box-shadow:0 8px 0 #6E0018, 0 0 34px rgba(255,45,85,.6), inset 0 -6px 10px rgba(0,0,0,.35);
     animation:knobIdle 1.9s ease-in-out infinite;
@@ -285,17 +304,23 @@
     transform:translateY(8px);
     box-shadow:0 2px 0 #6E0018, 0 0 20px rgba(255,45,85,.55), inset 0 -6px 10px rgba(0,0,0,.35);
   }
-  .lever .cap{font-weight:800; font-size:12px; color:var(--dim); letter-spacing:1px;}
+  .lever .cap{font-weight:800; font-size:clamp(11px, 2.6vmin, 13px); color:var(--dim); letter-spacing:1px;}
 
   .auto-btn{align-self:center; font:inherit; font-weight:900; cursor:pointer;
     border:2px solid rgba(255,255,255,.45); border-radius:999px; position:relative; z-index:2;
     background:linear-gradient(180deg,#FFE97A,var(--yellow)); color:#0B0E1A;
-    padding:11px 22px; box-shadow:0 4px 0 #7A6600, 0 0 24px rgba(255,212,0,.55);}
+    padding:clamp(7px, 1.8vmin, 11px) clamp(16px, 4vmin, 22px);
+    font-size:clamp(13px, 3.2vmin, 15px);
+    box-shadow:0 4px 0 #7A6600, 0 0 24px rgba(255,212,0,.55);
+    flex:0 0 auto;}
   .auto-btn:active{transform:translateY(4px); box-shadow:0 0 0 #7A6600, 0 0 14px rgba(255,212,0,.4);}
-  .redo-btn{margin-top:4px; align-self:center; font:inherit; font-weight:900; cursor:pointer;
+  .redo-btn{margin-top:2px; align-self:center; font:inherit; font-weight:900; cursor:pointer;
     border:2px solid rgba(255,255,255,.45); border-radius:999px; position:relative; z-index:2;
     background:linear-gradient(180deg,#FF6B85,var(--red)); color:#0B0E1A;
-    padding:12px 26px; box-shadow:0 4px 0 #6E0018, 0 0 24px rgba(255,45,85,.55);}
+    padding:clamp(8px, 2vmin, 12px) clamp(20px, 5vmin, 26px);
+    font-size:clamp(13px, 3.4vmin, 15px);
+    box-shadow:0 4px 0 #6E0018, 0 0 24px rgba(255,45,85,.55);
+    flex:0 0 auto;}
   .redo-btn:active{transform:translateY(4px); box-shadow:0 0 0 #6E0018, 0 0 14px rgba(255,45,85,.4);}
 
   /* ── 本注托盘 ── */
@@ -359,6 +384,66 @@
   /* ── 无障碍：尊重系统「减弱动效」设置 ── */
   @media (prefers-reduced-motion: reduce){
     *,*::before,*::after{animation:none !important; transition:none !important;}
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     桌面端适配（>=720px）：容器居中并扩宽到 640px，
+     摇奖机页与设置页改为两列布局，卷轴/摇杆放大
+     ════════════════════════════════════════════════════════════ */
+  @media (min-width: 720px){
+    body{align-items:flex-start; padding:0;}
+    .app{
+      max-width:640px;
+      padding:clamp(14px, 3vh, 32px) 22px calc(22px + env(safe-area-inset-bottom));
+      min-height:100vh; min-height:100dvh;
+    }
+    .app::before,.app::after{ width:6px; }
+    header h1{font-size:36px;}
+    header p{font-size:13px;}
+
+    /* ─ 设置页：两列 ─ */
+    #setup{display:grid !important; grid-template-columns:1fr 1fr; gap:18px; align-content:start;}
+    #setup > .card{min-height:0;}
+    #setup > .btn.primary{grid-column:1 / -1;}
+    /* 让 ① 选择彩种 + ② 选择玩法 共占左列；③ 注数 占右列顶；开始按钮占整行 */
+    #setup > .card:nth-of-type(1){grid-column:1; grid-row:1;}
+    #setup > .card:nth-of-type(2){grid-column:1; grid-row:2;}
+    #setup > .card:nth-of-type(3){grid-column:2; grid-row:1 / span 2;}
+    #setup > #startBtn{grid-column:1 / -1; grid-row:3;}
+
+    /* ─ 摇奖机页：两列 ─ */
+    #machine{
+      display:grid !important;
+      grid-template-columns:minmax(0, 1.05fr) minmax(0, 1fr);
+      grid-template-rows:auto auto 1fr;
+      gap:16px 22px; align-content:start;
+    }
+    #machine > .topbar{grid-column:1 / -1; grid-row:1;}
+    #machine > .progress{grid-column:1 / -1; grid-row:2; font-size:15px; padding:10px 14px;}
+    /* 卷轴/摇杆/按钮区 放左下 */
+    #machine > .machine{
+      grid-column:1; grid-row:3;
+      align-self:start;
+      gap:18px; padding-top:6px;
+    }
+    /* 「本注号码」+「已摇出记录」放右 */
+    #machine > .card{grid-column:2; grid-row:3; align-self:start; max-height:calc(100vh - 220px); overflow-y:auto;}
+
+    /* 桌面端：卷轴/摇杆/按钮放大 */
+    #machine .reel{width:170px; height:170px; border-radius:22px;}
+    #machine #reelNum{font-size:80px;}
+    #machine .lever .knob{width:90px; height:90px; font-size:24px;}
+    #machine .auto-btn{font-size:15px; padding:11px 22px;}
+    #machine .redo-btn{font-size:15px; padding:12px 26px;}
+
+    /* ─ 结果页：限宽并居中 ─ */
+    #result{align-items:stretch;}
+    #result .sheet{padding:22px;}
+  }
+  /* 窄屏微调（<360px 小屏手机） */
+  @media (max-width: 359px){
+    header h1{font-size:26px; letter-spacing:2px;}
+    .machine .lever .knob{font-size:14px;}
   }
 </style>
 </head>
