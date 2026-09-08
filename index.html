@@ -401,44 +401,44 @@
     header h1{font-size:36px;}
     header p{font-size:13px;}
 
-    /* ─ 设置页：两列 ─ */
-    #setup{display:grid !important; grid-template-columns:1fr 1fr; gap:18px; align-content:start;}
-    #setup > .card{min-height:0;}
-    #setup > .btn.primary{grid-column:1 / -1;}
+    /* ─ 设置页：两列（仅在 active 时） ─ */
+    #setup.active{display:grid !important; grid-template-columns:1fr 1fr; gap:18px; align-content:start;}
+    #setup.active > .card{min-height:0;}
+    #setup.active > .btn.primary{grid-column:1 / -1;}
     /* 让 ① 选择彩种 + ② 选择玩法 共占左列；③ 注数 占右列顶；开始按钮占整行 */
-    #setup > .card:nth-of-type(1){grid-column:1; grid-row:1;}
-    #setup > .card:nth-of-type(2){grid-column:1; grid-row:2;}
-    #setup > .card:nth-of-type(3){grid-column:2; grid-row:1 / span 2;}
-    #setup > #startBtn{grid-column:1 / -1; grid-row:3;}
+    #setup.active > .card:nth-of-type(1){grid-column:1; grid-row:1;}
+    #setup.active > .card:nth-of-type(2){grid-column:1; grid-row:2;}
+    #setup.active > .card:nth-of-type(3){grid-column:2; grid-row:1 / span 2;}
+    #setup.active > #startBtn{grid-column:1 / -1; grid-row:3;}
 
-    /* ─ 摇奖机页：两列 ─ */
-    #machine{
+    /* ─ 摇奖机页：两列（仅在 active 时） ─ */
+    #machine.active{
       display:grid !important;
       grid-template-columns:minmax(0, 1.05fr) minmax(0, 1fr);
       grid-template-rows:auto auto 1fr;
       gap:16px 22px; align-content:start;
     }
-    #machine > .topbar{grid-column:1 / -1; grid-row:1;}
-    #machine > .progress{grid-column:1 / -1; grid-row:2; font-size:15px; padding:10px 14px;}
+    #machine.active > .topbar{grid-column:1 / -1; grid-row:1;}
+    #machine.active > .progress{grid-column:1 / -1; grid-row:2; font-size:15px; padding:10px 14px;}
     /* 卷轴/摇杆/按钮区 放左下 */
-    #machine > .machine{
+    #machine.active > .machine{
       grid-column:1; grid-row:3;
       align-self:start;
       gap:18px; padding-top:6px;
     }
     /* 「本注号码」+「已摇出记录」放右 */
-    #machine > .card{grid-column:2; grid-row:3; align-self:start; max-height:calc(100vh - 220px); overflow-y:auto;}
+    #machine.active > .card{grid-column:2; grid-row:3; align-self:start; max-height:calc(100vh - 220px); overflow-y:auto;}
 
     /* 桌面端：卷轴/摇杆/按钮放大 */
-    #machine .reel{width:170px; height:170px; border-radius:22px;}
-    #machine #reelNum{font-size:80px;}
-    #machine .lever .knob{width:90px; height:90px; font-size:24px;}
-    #machine .auto-btn{font-size:15px; padding:11px 22px;}
-    #machine .redo-btn{font-size:15px; padding:12px 26px;}
+    #machine.active .reel{width:170px; height:170px; border-radius:22px;}
+    #machine.active #reelNum{font-size:80px;}
+    #machine.active .lever .knob{width:90px; height:90px; font-size:24px;}
+    #machine.active .auto-btn{font-size:15px; padding:11px 22px;}
+    #machine.active .redo-btn{font-size:15px; padding:12px 26px;}
 
-    /* ─ 结果页：限宽并居中 ─ */
-    #result{align-items:stretch;}
-    #result .sheet{padding:22px;}
+    /* ─ 结果页：限宽并居中（仅 active 时） ─ */
+    #result.active{align-items:stretch;}
+    #result.active .sheet{padding:22px;}
   }
   /* 窄屏微调（<360px 小屏手机） */
   @media (max-width: 359px){
