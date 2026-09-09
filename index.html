@@ -440,16 +440,16 @@
 
   /* ② 桌面：居中 + 两列（height 撑满视口让 col 真正居中；去硬 overflow 避免按钮被裁） */
   @media (min-width: 900px){
-    /* 整体在视口中垂直水平居中 */
-    body{align-items:center; justify-content:center; min-height:100vh; min-height:100dvh;}
+    /* 整体顶部对齐居中 + body 可滚动，让单列堆叠的内容在矮视口不被裁 */
+    body{align-items:flex-start; justify-content:center; padding:24px 16px 32px; min-height:100vh; min-height:100dvh;}
     .app{
-      max-width:860px;
-      height:calc(100dvh - 48px);
+      max-width:720px;
+      height:auto;
       padding:20px 26px calc(20px + env(safe-area-inset-bottom));
       border-radius:20px;
     }
-    header{padding:10px 0 8px;}
-    header h1{font-size:30px;}
+    header{padding:8px 0 6px;}
+    header h1{font-size:34px;}
     header p{font-size:14px;}
 
     /* 设置页：两列（仅在 active 时，避免 !important 覆盖 display:none） */
@@ -461,35 +461,30 @@
     #setup.active > .card:nth-of-type(3){grid-column:2; grid-row:1 / span 2;}
     #setup.active > #startBtn{grid-column:1 / -1; grid-row:3;}
 
-    /* 摇奖机页：左操作区 / 右号码区（仅 active 时） */
+    /* 摇奖机页：单列垂直堆叠（本注号码跟在按钮下方，跟左边对齐） */
     #machine.active{
-      display:grid !important; overflow:hidden;
-      grid-template-columns:360px minmax(0,1fr);
-      grid-template-rows:minmax(0,1fr);
-      gap:0 24px; align-items:stretch; padding-top:0;
+      display:flex !important; flex-direction:column;
+      gap:16px; padding-top:0;
     }
     #machine.active > .machine-top{
-      grid-column:1; grid-row:1;
-      height:100%; min-height:0;
-      display:flex; flex-direction:column; justify-content:center; gap:14px;
+      flex:0 0 auto;
+      display:flex; flex-direction:column; justify-content:center; gap:12px;
     }
     #machine.active > .machine-bottom{
-      grid-column:2; grid-row:1;
-      height:100%; min-height:0;
+      flex:0 0 auto;
       display:flex; flex-direction:column; gap:12px;
-      overflow-y:auto; padding:2px 4px 2px 0;
       align-items:stretch;
     }
-    /* 桌面：tray 卡片按内容高度（避免 0 球时撑成大色块），drawnLog 自然跟在下方 */
-    /* 桌面：卷轴/摇杆放大 */
-    #machine.active .reel{width:200px; height:200px; border-radius:24px;}
-    #machine.active #reelNum{font-size:96px;}
-    #machine.active .lever .knob{width:104px; height:104px; font-size:27px;}
+    /* 卷轴/摇杆尺寸收一些，避免单列堆叠超出桌面视口 */
+    #machine.active .reel{width:170px; height:170px; border-radius:22px;}
+    #machine.active #reelNum{font-size:82px;}
+    #machine.active .lever .knob{width:92px; height:92px; font-size:24px;}
     #machine.active .lever .cap{font-size:13px;}
-    #machine.active .machine{gap:18px;}
-    #machine.active .auto-btn{font-size:16px; padding:12px 22px;}
-    #machine.active .redo-btn{font-size:16px; padding:12px 24px;}
-    #machine.active .progress{font-size:16px; padding:11px 14px;}
+    #machine.active .machine{gap:14px;}
+    #machine.active .auto-btn{font-size:15px; padding:11px 22px;}
+    #machine.active .redo-btn{font-size:15px; padding:11px 24px;}
+    #machine.active .progress{font-size:15px; padding:10px 14px;}
+    #machine.active .act-row{gap:10px;}
 
     /* 结果页 */
     #result.active{align-items:stretch;}
