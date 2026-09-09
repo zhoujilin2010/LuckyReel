@@ -59,11 +59,11 @@
     /* 容器在桌面端居中并扩宽；手机保持 480px 单列 */
     margin:0 auto;
   }
-  /* 装饰③：机柜左右霓虹立柱 */
+  /* 装饰③：机柜左右霓虹立柱（贴 .app 内边，pointer-events:none，绝不挡点击/视觉不糊内容） */
   .app::before,.app::after{
-    content:""; position:fixed; top:0; bottom:0; width:5px; z-index:2; pointer-events:none;
+    content:""; position:absolute; top:0; bottom:0; width:4px; z-index:1; pointer-events:none;
     background:linear-gradient(180deg,transparent,var(--blue),var(--purple),var(--blue),transparent);
-    box-shadow:0 0 18px rgba(0,229,255,.8); opacity:.9;
+    box-shadow:0 0 8px rgba(0,229,255,.55); opacity:.85; border-radius:2px;
   }
   .app::before{left:0;} .app::after{right:0;}
 
@@ -81,7 +81,7 @@
   }
   @keyframes bulbs{0%,100%{opacity:1;}50%{opacity:.4;}}
   header h1{
-    margin:0; padding-top:8px; font-size:30px; font-weight:900; letter-spacing:3px; font-family:var(--num);
+    margin:0; padding-top:6px; font-size:24px; font-weight:900; letter-spacing:2px; font-family:var(--num);
     color:#fff;
     text-shadow:0 0 6px var(--red),0 0 18px var(--red),0 0 36px rgba(255,45,85,.65),0 0 62px rgba(177,75,255,.5);
     animation:neonPulse 2.4s ease-in-out infinite;
@@ -246,8 +246,8 @@
     padding:clamp(2px, 0.8vmin, 6px) 0 clamp(2px, 0.8vmin, 6px);
   }
   .reel{
-    width:clamp(92px, 24vmin, 200px);
-    height:clamp(92px, 24vmin, 200px);
+    width:clamp(120px, 26vmin, 200px);
+    height:clamp(120px, 26vmin, 200px);
     border-radius:clamp(12px, 3vmin, 22px);
     position:relative; overflow:hidden;
     border:3px solid rgba(0,229,255,.55);
@@ -298,12 +298,14 @@
   .lever{
     width:100%; max-width:320px; border:none; background:transparent; cursor:pointer;
     display:flex; flex-direction:column; align-items:center; gap:6px; padding:0;
-    position:relative; z-index:2;            /* 保证始终可点击 */
+    position:relative; z-index:5;            /* 顶层，确保 PULL 永远可点 */
+    pointer-events:auto;
     flex:0 0 auto;
   }
+  .lever .knob{pointer-events:auto;}
   .lever .knob{
-    width:clamp(56px, 14vmin, 92px);
-    height:clamp(56px, 14vmin, 92px);
+    width:clamp(72px, 16vmin, 100px);
+    height:clamp(72px, 16vmin, 100px);
     border-radius:50%;
     border:3px solid rgba(255,255,255,.55);
     background:radial-gradient(60% 60% at 35% 28%,#FF9AAC,var(--red) 58%,#A8001E);
@@ -327,24 +329,31 @@
   .lever .cap{font-weight:800; font-size:clamp(11px, 2.6vmin, 13px); color:var(--dim); letter-spacing:1px;}
 
   .auto-btn{align-self:center; font:inherit; font-weight:900; cursor:pointer;
-    border:2px solid rgba(255,255,255,.45); border-radius:999px; position:relative; z-index:2;
+    border:2px solid rgba(255,255,255,.45); border-radius:999px; position:relative; z-index:5;
     background:linear-gradient(180deg,#FFE97A,var(--yellow)); color:#0B0E1A;
-    padding:clamp(7px, 1.8vmin, 11px) clamp(16px, 4vmin, 22px);
-    font-size:clamp(13px, 3.2vmin, 15px);
+    padding:clamp(8px, 2vmin, 12px) clamp(18px, 4.5vmin, 24px);
+    font-size:clamp(14px, 3.4vmin, 16px);
     box-shadow:0 4px 0 #7A6600, 0 0 24px rgba(255,212,0,.55);
-    flex:0 0 auto;}
+    pointer-events:auto; flex:0 0 auto;}
   .auto-btn:active{transform:translateY(4px); box-shadow:0 0 0 #7A6600, 0 0 14px rgba(255,212,0,.4);}
   .redo-btn{margin-top:2px; align-self:center; font:inherit; font-weight:900; cursor:pointer;
-    border:2px solid rgba(255,255,255,.45); border-radius:999px; position:relative; z-index:2;
+    border:2px solid rgba(255,255,255,.45); border-radius:999px; position:relative; z-index:5;
     background:linear-gradient(180deg,#FF6B85,var(--red)); color:#0B0E1A;
-    padding:clamp(8px, 2vmin, 12px) clamp(20px, 5vmin, 26px);
-    font-size:clamp(13px, 3.4vmin, 15px);
+    padding:clamp(9px, 2.2vmin, 13px) clamp(22px, 5.5vmin, 28px);
+    font-size:clamp(14px, 3.6vmin, 17px);
     box-shadow:0 4px 0 #6E0018, 0 0 24px rgba(255,45,85,.55);
-    flex:0 0 auto;}
+    pointer-events:auto; flex:0 0 auto;}
   .redo-btn:active{transform:translateY(4px); box-shadow:0 0 0 #6E0018, 0 0 14px rgba(255,45,85,.4);}
 
   /* ── 本注托盘 ── */
   .tray{display:flex; flex-direction:column; gap:12px;}
+  .tray:empty + .tray-hint{display:flex;}
+  .tray:not(:empty) + .tray-hint{display:none;}
+  .tray-hint{display:none; align-items:center; justify-content:center;
+    text-align:center; padding:30px 16px; font-weight:800; font-size:15px;
+    color:var(--dim); letter-spacing:1px;
+    background:repeating-linear-gradient(45deg,rgba(0,229,255,.05) 0 8px,transparent 8px 16px);
+    border-radius:10px; border:2px dashed rgba(0,229,255,.30);}
   .tray-group{display:flex; flex-direction:column; gap:6px;}
   .tray-label{font-weight:800; font-size:12px; color:var(--dim); letter-spacing:1px;}
   .balls{display:flex; flex-wrap:wrap; gap:9px;}
@@ -415,36 +424,38 @@
 
   /* ① 平板 / 中等窗口 */
   @media (min-width: 720px){
-    .app{max-width:600px; padding:20px 22px calc(22px + env(safe-area-inset-bottom));}
-    .app::before,.app::after{width:6px;}
-    header h1{font-size:34px;}
+    .app{max-width:600px; padding:18px 20px calc(18px + env(safe-area-inset-bottom));}
+    .app::before,.app::after{width:5px;}
+    header h1{font-size:28px;}
     header p{font-size:13px;}
     /* 操作区适度放大 */
-    #machine.active .reel{width:130px; height:130px; border-radius:18px;}
-    #machine.active #reelNum{font-size:58px;}
-    #machine.active .lever .knob{width:74px; height:74px; font-size:19px;}
-    #machine.active .auto-btn,#machine.active .redo-btn{font-size:14px;}
+    #machine.active .reel{width:140px; height:140px; border-radius:20px;}
+    #machine.active #reelNum{font-size:64px;}
+    #machine.active .lever .knob{width:80px; height:80px; font-size:21px;}
+    #machine.active .auto-btn,#machine.active .redo-btn{font-size:15px;}
     #machine.active .progress{font-size:15px; padding:9px 12px;}
     #machine.active{gap:14px;}
     .machine-top{gap:12px;}
   }
 
-  /* ② 桌面：居中 + 两列 */
+  /* ② 桌面：居中 + 两列（height 撑满视口让 col 真正居中；去硬 overflow 避免按钮被裁） */
   @media (min-width: 900px){
-    /* 整体在视口中垂直水平居中，不再「靠上」 */
+    /* 整体在视口中垂直水平居中 */
     body{align-items:center; justify-content:center; min-height:100vh; min-height:100dvh;}
     .app{
       max-width:860px;
-      height:auto; max-height:calc(100dvh - 48px);
-      padding:22px 26px calc(22px + env(safe-area-inset-bottom));
+      height:calc(100dvh - 48px);
+      padding:20px 26px calc(20px + env(safe-area-inset-bottom));
       border-radius:20px;
     }
     header{padding:10px 0 8px;}
-    header h1{font-size:38px;}
+    header h1{font-size:30px;}
     header p{font-size:14px;}
 
     /* 设置页：两列（仅在 active 时，避免 !important 覆盖 display:none） */
     #setup.active{display:grid !important; grid-template-columns:1fr 1fr; gap:18px; align-content:start;}
+    /* 卡片自己高度，不被同行拉伸留白 */
+    #setup.active > .card{align-self:start;}
     #setup.active > .card:nth-of-type(1){grid-column:1; grid-row:1;}
     #setup.active > .card:nth-of-type(2){grid-column:1; grid-row:2;}
     #setup.active > .card:nth-of-type(3){grid-column:2; grid-row:1 / span 2;}
@@ -453,27 +464,31 @@
     /* 摇奖机页：左操作区 / 右号码区（仅 active 时） */
     #machine.active{
       display:grid !important; overflow:hidden;
-      grid-template-columns:380px minmax(0,1fr);
+      grid-template-columns:360px minmax(0,1fr);
       grid-template-rows:minmax(0,1fr);
       gap:0 24px; align-items:stretch; padding-top:0;
     }
     #machine.active > .machine-top{
       grid-column:1; grid-row:1;
-      display:flex; flex-direction:column; justify-content:center; gap:16px;
-      min-height:0;
+      height:100%; min-height:0;
+      display:flex; flex-direction:column; justify-content:center; gap:14px;
     }
     #machine.active > .machine-bottom{
       grid-column:2; grid-row:1;
-      min-height:0; overflow-y:auto; padding:2px 4px 2px 0;
+      height:100%; min-height:0;
+      display:flex; flex-direction:column; gap:12px;
+      overflow-y:auto; padding:2px 4px 2px 0;
+      align-items:stretch;
     }
+    /* 桌面：tray 卡片按内容高度（避免 0 球时撑成大色块），drawnLog 自然跟在下方 */
     /* 桌面：卷轴/摇杆放大 */
-    #machine.active .reel{width:190px; height:190px; border-radius:24px;}
-    #machine.active #reelNum{font-size:88px;}
-    #machine.active .lever .knob{width:96px; height:96px; font-size:25px;}
+    #machine.active .reel{width:200px; height:200px; border-radius:24px;}
+    #machine.active #reelNum{font-size:96px;}
+    #machine.active .lever .knob{width:104px; height:104px; font-size:27px;}
     #machine.active .lever .cap{font-size:13px;}
     #machine.active .machine{gap:18px;}
-    #machine.active .auto-btn{font-size:15px; padding:11px 20px;}
-    #machine.active .redo-btn{font-size:15px; padding:11px 22px;}
+    #machine.active .auto-btn{font-size:16px; padding:12px 22px;}
+    #machine.active .redo-btn{font-size:16px; padding:12px 24px;}
     #machine.active .progress{font-size:16px; padding:11px 14px;}
 
     /* 结果页 */
@@ -481,26 +496,43 @@
     #result.active .sheet{padding:24px; max-width:720px; margin:0 auto; width:100%;}
     #result.active > .btn{max-width:720px; margin-left:auto; margin-right:auto;}
   }
-  /* 窄屏微调（<360px 小屏手机） */
+  /* 窄屏微调（<360px 小屏手机：缩彩种按钮 padding/字距，避免「快乐8」被切） */
   @media (max-width: 359px){
-    header h1{font-size:26px; letter-spacing:2px;}
+    header h1{font-size:22px; letter-spacing:1px;}
     .machine .lever .knob{font-size:13px;}
     .act-row{gap:6px;}
     .act-row .auto-btn,.act-row .redo-btn{font-size:12px; padding:8px 12px;}
+    .lottery-row{gap:6px;}
+    .lottery-row .btn{padding:16px 4px; font-size:14px; letter-spacing:0;}
   }
   /* 矮屏（如 iPhone SE 667px）：压缩顶部招牌，把空间让给号码区 */
   @media (max-height: 720px) and (max-width: 899px){
     header{padding:6px 0 2px; margin:0 0 2px;}
-    header h1{font-size:24px; letter-spacing:2px; padding-top:4px;}
+    header h1{font-size:20px; letter-spacing:1px; padding-top:4px;}
     header p{display:none;}
     .slot{width:64px; height:18px; margin:6px auto 0;}
     .coin{font-size:10px; letter-spacing:2px; margin:5px auto 0;}
     .app{padding:env(safe-area-inset-top) 12px calc(12px + env(safe-area-inset-bottom));}
     .machine .lever .cap{display:none;}
   }
+
+  /* ══ 摇奖机/结果页：头部压缩（隐藏投币口，腾出纵向空间给号码区）══
+     放在所有 @media 之后，保证优先级最高 */
+  body.view-mode-machine header,
+  body.view-mode-result header{padding:6px 0 4px; margin:0 0 2px;}
+  body.view-mode-machine header h1,
+  body.view-mode-result header h1{padding-top:4px;}
+  body.view-mode-machine header::before,
+  body.view-mode-result header::before{box-shadow:0 0 14px rgba(255,45,85,.28), inset 0 0 16px rgba(255,45,85,.10);}
+  body.view-mode-machine header p,
+  body.view-mode-result header p{display:none;}
+  body.view-mode-machine .slot,
+  body.view-mode-machine .coin,
+  body.view-mode-result .slot,
+  body.view-mode-result .coin{display:none !important;}
 </style>
 </head>
-<body data-page-node-id="GVC5Kbd1vUXRjqDPOSXEn8">
+<body class="view-mode-setup" data-page-node-id="GVC5Kbd1vUXRjqDPOSXEn8">
 <div class="app" data-page-node-id="h6ECiUHCPidfM5e8sdyyUR">
   <header data-page-node-id="talmmmycUX0H5LdqMEqdAf">
     <h1 data-page-node-id="XKcCH7LKx0pCe17fDnA7QL">LuckyReel</h1>
@@ -558,6 +590,7 @@
       <div class="card" data-page-node-id="EKIyoev6iWoJ5PdEFrGqNE">
         <p class="section-title" data-page-node-id="NCKGQKSHOhBPOe2I5jsBH5">本注号码</p>
         <div class="tray" id="tray" data-page-node-id="HX0nFXgprY4lbqFbygllKu"></div>
+        <div class="tray-hint" id="trayHint">👆 拨动摇杆抽出第一号</div>
       </div>
       <div class="card" id="drawnCard" style="display:none" data-page-node-id="0ZIgg9DpwFscQCCdy3mcuv">
         <p class="section-title" data-page-node-id="86fVDysnJh1kwhAv7UPvzD">已摇出记录</p>
@@ -640,7 +673,12 @@ resetCounts();
 /* ── 小工具 ── */
 function el(tag, cls, txt){ const e=document.createElement(tag); if(cls) e.className=cls; if(txt!=null) e.textContent=txt; return e; }
 function $(id){ return document.getElementById(id); }
-function showView(id){ document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); $(id).classList.add('active'); }
+function showView(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  $(id).classList.add('active');
+  // 同步 body class，CSS 按 view-mode-* 切换装饰/压缩 header
+  document.body.className = 'view-mode-' + id;
+}
 function toast(msg){
   const t = el('div','toast',msg); $('toastBox').appendChild(t);
   setTimeout(()=>{ t.style.opacity='0'; setTimeout(()=>t.remove(),250); }, 1800);
@@ -788,15 +826,20 @@ function updateProgress(){
 function renderTray(){
   const tray=$('tray'); tray.innerHTML='';
   const bet = state.results[state.currentBet]||{};
+  let anyBall = false;
   state.drawPlan.forEach(g=>{
     const wrap=el('div','tray-group');
     wrap.appendChild(el('div','tray-label',g.label));
     const balls=el('div','balls');
     (bet[g.key]||[]).forEach(n=>{
       const b=el('span','ball',pad(n)); b.style.background=g.color; balls.appendChild(b);
+      anyBall = true;
     });
     wrap.appendChild(balls); tray.appendChild(wrap);
   });
+  // 0 球时显示"拨动摇杆"提示，有球后自动隐藏
+  const hint = document.getElementById('trayHint');
+  if(hint) hint.style.display = anyBall ? 'none' : 'flex';
 }
 function renderDrawnLog(){
   const card=$('drawnCard'), log=$('drawnLog');
